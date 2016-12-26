@@ -1,5 +1,5 @@
 /**
- *  Mode Setter
+ *  Mode Setter: test
  *
  *  Copyright 2016 J.R. Jasperson
  *
