@@ -276,9 +276,9 @@ def setMode(newMode, reason="")
     }
     if (location.mode != newMode) {
         // notification message
-        def message = "Mode Setter: ${location.name} changed mode from '${location.mode}' to '${newMode}'" + reason
+        def message = "${location.name} changed mode from '${location.mode}' to '${newMode}'" + reason
         setLocationMode(newMode)
-        state.lastOp = "setMode: ${message}"
+        state.lastOp = "setMode: ${location.name} changed mode from '${location.mode}' to '${newMode}' ${reason}"
         send(message)  // send message after changing mode
     } else {
         log.debug("Mode Setter: ${location.name} is already in ${newMode} mode, no actions needed")
@@ -388,9 +388,8 @@ private send(msg)
     if (state.isPush) {
         log.debug("Mode Setter: Sending push notification")
         sendPush(msg)
-    } else {
-        log.debug("Mode Setter: Sending notification")
-        sendNotificationEvent(msg)
     }
+    log.debug("Mode Setter: Sending notification")
+    sendNotificationEvent(msg)
     log.info("Mode Setter: ${msg}")
 }
