@@ -150,7 +150,7 @@ def sunriseHandler(evt)
 {
     state.modeIfHome = settings.newHomeDayMode
     state.modeIfAway = settings.newAwayDayMode
-    setMode()
+    changeMode()
 }
 
 // event handler when the sunset time is reached
@@ -158,7 +158,7 @@ def sunsetHandler(evt)
 {
     state.modeIfHome = settings.newHomeNightMode
     state.modeIfAway = settings.newAwayNightMode
-    setMode()
+    changeMode()
 }
 
 def changeMode(){
