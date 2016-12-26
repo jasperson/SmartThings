@@ -34,6 +34,7 @@ preferences{
         input "newAwayNightMode",	"mode", title: "Everyone is away at night"
         input "newHomeDayMode", 	"mode", title: "Someone is home during the day"
         input "newHomeNightMode",	"mode", title: "Someone is home at night"
+        input "ignoreMode",			"mode", title: "Ignore state changes if in this mode"
     }
     section("Mode Change Delay (minutes)") {
         input "awayThreshold", "decimal", title: "Away delay [5m]", required: false
@@ -268,6 +269,11 @@ def handleArrival()
 // change the system to the new mode, unless its already in that mode.
 def setMode(newMode, reason="")
 {
+    if (location.mode == settings.ignoreMode) {
+    	log.debug("Mode Setter: ${location.name} is in ignore mode: " + location.mode)
+        state.lastOp = "setMode: ${location.name} is in ignore mode: ${location.mode}"
+        return
+    }
     if (location.mode != newMode) {
         // notification message
         def message = "Mode Setter: ${location.name} changed mode from '${location.mode}' to '${newMode}'" + reason
