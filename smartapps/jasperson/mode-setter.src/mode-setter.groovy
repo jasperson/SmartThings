@@ -1,5 +1,5 @@
 /**
- *  Mode Setter
+ *  Mode Setter: Test 2 from CL
  *
  *  Copyright 2016 J.R. Jasperson
  *
