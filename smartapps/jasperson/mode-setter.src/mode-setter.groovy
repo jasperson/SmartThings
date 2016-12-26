@@ -47,12 +47,14 @@ preferences{
 // Invoked on install
 def installed(){
     log.debug("Mode Setter: installed() @${location.name}: ${settings}")
+    state.lastOp = "installed: @${location.name}: ${settings}"
     initialize(true)
 }
 
 // Invoked on update
 def updated(){
     log.debug("Mode Setter: updated() @${location.name}: ${settings}")
+    state.lastOp = "updated: @${location.name}: ${settings}"
     unsubscribe()
     initialize(false)
 }
@@ -60,6 +62,7 @@ def updated(){
 def initialize(isInstall){
     // subscribe to all the events we care about
     log.debug("Mode Setter: Subscribing to events ...")
+    state.lastOp = "initialize: Subscribing to events ..."
 
     // Subscriptions, attribute/state, callback function
     subscribe(people,   "presence", presenceHandler)
@@ -140,6 +143,7 @@ def initialize(isInstall){
 def setInitialMode()
 {
     changeMode()
+    state.lastOp = "init"
     state.pendingOp = null
 }
 
@@ -150,6 +154,7 @@ def sunriseHandler(evt)
 {
     state.modeIfHome = settings.newHomeDayMode
     state.modeIfAway = settings.newAwayDayMode
+    state.lastOp = "Sunrise Handler"
     changeMode()
 }
 
@@ -158,6 +163,7 @@ def sunsetHandler(evt)
 {
     state.modeIfHome = settings.newHomeNightMode
     state.modeIfAway = settings.newAwayNightMode
+    state.lastOp = "Sunset Handler"
     changeMode()
 }
 
@@ -196,6 +202,7 @@ def handleDeparture()
     // do nothing if someone's still home
     if (!isEveryoneAway()) {
         log.info("Mode Setter: Someone is still home, no actions needed")
+        state.lastOp = "handleDeparture: ${state.eventDevice} left ${location.name}; someone is still home, no actions needed"
         return
     }
 
@@ -205,6 +212,7 @@ def handleDeparture()
     // canceling any previous pending timer, which is what we want to
     // do. So we do this even if delay is 0.
     log.info("Mode Setter: Scheduling ${state.modeIfAway} mode in " + state.awayDelay + "s") // FIXME: Is this state set?
+    state.lastOp = "handleDeparture: Scheduling ${state.modeIfAway} mode in ${state.awayDelay} s"
     state.pendingOp = "away"
     state.timerDevice = state.eventDevice
     // we always use runIn(). This has the benefit of automatically
@@ -231,6 +239,7 @@ def handleArrival()
         // not the first one home, do nothing, as any action that
         // don't do anything if someone's still home.
         log.debug("Mode Setter: Someone is already home, no actions needed")
+        state.lastOp = "handleArrival: Someone is already home, no actions needed"
         return
     }
 
@@ -245,6 +254,7 @@ def handleArrival()
 
     // now we set home/night mode
     log.info("Mode Setter: Scheduling ${state.modeIfHome} mode in " + state.arrivalDelay + "s")
+    state.lastOp = "handleArrival: Scheduling ${state.modeIfHome} mode in ${state.arrivalDelay} s"
     state.pendingOp = "arrive"
     state.timerDevice = state.eventDevice
     // if any away timer is active, it will be clobbered with
@@ -262,9 +272,11 @@ def setMode(newMode, reason="")
         // notification message
         def message = "Mode Setter: ${location.name} changed mode from '${location.mode}' to '${newMode}'" + reason
         setLocationMode(newMode)
+        state.lastOp = "setMode: ${message}"
         send(message)  // send message after changing mode
     } else {
         log.debug("Mode Setter: ${location.name} is already in ${newMode} mode, no actions needed")
+        state.lastOp = "setMode: ${location.name} is already in ${newMode} mode, no actions needed"
     }
 }
 
@@ -322,12 +334,14 @@ def delaySetMode()
         newMode = state.modeIfAway
         if (state.pendingOp) {
             log.debug("Mode Setter: ${state.pendingOp} timer elapsed: everyone is away")
+            state.lastOp = "delaySetMode: ${state.pendingOp} timer elapsed: everyone is away"
         }
     } else {
         reason = reasonStr(false, state.arrivalDelay, arrivalThreshold)
         newMode = state.modeIfHome
         if (state.pendingOp) {
             log.debug("Mode Setter: ${state.pendingOp} timer elapsed: someone is home")
+            state.lastOp = "delaySetMode: ${state.pendingOp} timer elapsed: someone is home"
         }
     }
 
