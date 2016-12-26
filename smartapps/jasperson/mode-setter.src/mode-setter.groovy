@@ -30,10 +30,10 @@ preferences{
         input "people", "capability.presenceSensor", multiple: true
     }
     section("Mode Settings") {
-		input "newAwayDayMode",		"mode", title: "Everyone is away during the day"	// JR Edit: new mode
-        input "newAwayNightMode",	"mode", title: "Everyone is away at night"			// JR Edit: was 'newAwayMode'
-        input "newHomeDayMode", 	"mode", title: "Someone is home during the day"		// JR Edit: was newSunriseMode
-        input "newHomeNightMode",	"mode", title: "Someone is home at night"			// JR Edit: was newSunsetMode
+		input "newAwayDayMode",		"mode", title: "Everyone is away during the day"
+        input "newAwayNightMode",	"mode", title: "Everyone is away at night"
+        input "newHomeDayMode", 	"mode", title: "Someone is home during the day"
+        input "newHomeNightMode",	"mode", title: "Someone is home at night"
     }
     section("Mode Change Delay (minutes)") {
         input "awayThreshold", "decimal", title: "Away delay [5m]", required: false
@@ -108,8 +108,8 @@ def initialize(isInstall){
         //       without a zip code. This will become the correct
         //       value at the next sunrise/sunset event.
         log.debug("Mode Setter: No sun info yet, assuming daytime")
-        state.modeIfHome = newHomeDayMode
-        state.modeIfAway = newAwayDayMode
+        state.modeIfHome = settings.newHomeDayMode
+        state.modeIfAway = settings.newAwayDayMode
 
         state.eventDevice = ""  // last event device
 
@@ -148,25 +148,25 @@ def setInitialMode()
 // event handler when the sunrise time is reached
 def sunriseHandler(evt)
 {
-    state.modeIfHome = newHomeDayMode
-    state.modeIfAway = newAwayDayMode
+    state.modeIfHome = settings.newHomeDayMode
+    state.modeIfAway = settings.newAwayDayMode
     setMode()
 }
 
 // event handler when the sunset time is reached
 def sunsetHandler(evt)
 {
-    state.modeIfHome = newHomeNightMode
-    state.modeIfAway = newAwayNightMode
+    state.modeIfHome = settings.newHomeNightMode
+    state.modeIfAway = settings.newAwayNightMode
     setMode()
 }
 
 def changeMode(){
     if (isEveryoneAway()) {
-    	setMode(state.modeIfAway, " because no one is present")
+    	setMode(state.modeIfAway, " because no one is home")
     }
     else{
-    	setMode(state.modeIfHome, " because someone is present")
+    	setMode(state.modeIfHome, " because someone is home")
     }
 }
 
@@ -195,7 +195,7 @@ def handleDeparture()
 
     // do nothing if someone's still home
     if (!isEveryoneAway()) {
-        log.info("Mode Setter: Someone is still present, no actions needed")
+        log.info("Mode Setter: Someone is still home, no actions needed")
         return
     }
 
@@ -230,7 +230,7 @@ def handleArrival()
     if (numHome > 1) {
         // not the first one home, do nothing, as any action that
         // don't do anything if someone's still home.
-        log.debug("Mode Setter: Someone is already present, no actions needed")
+        log.debug("Mode Setter: Someone is already home, no actions needed")
         return
     }
 
