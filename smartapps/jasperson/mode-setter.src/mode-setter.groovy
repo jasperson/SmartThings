@@ -387,7 +387,7 @@ private send(msg)
 {
     if (state.isPush) {
         log.debug("Mode Setter: Sending push notification")
-        sendPush(msg)
+        sendPushMessage(msg)
     }
     log.debug("Mode Setter: Sending notification")
     sendNotificationEvent(msg)
