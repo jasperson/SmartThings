@@ -25,6 +25,7 @@ definition(
     iconX3Url: "http://cdn.device-icons.smartthings.com/Weather/weather14-icn@3x.png"
 )
 
+// Presented to user on app installation/configuration
 preferences{
     section("Presence Sensors") {
         input "people", "capability.presenceSensor", multiple: true
@@ -45,14 +46,14 @@ preferences{
     }
 }
 
-// Invoked on install
+// Invoked on app install
 def installed(){
     log.debug("Mode Setter: installed() @${location.name}: ${settings}")
     state.lastOp = "installed: @${location.name}: ${settings}"
     initialize(true)
 }
 
-// Invoked on update
+// Invoked on app update
 def updated(){
     log.debug("Mode Setter: updated() @${location.name}: ${settings}")
     state.lastOp = "updated: @${location.name}: ${settings}"
@@ -60,6 +61,7 @@ def updated(){
     initialize(false)
 }
 
+// Invoked by installed() and updated()
 def initialize(isInstall){
     // subscribe to all the events we care about
     log.debug("Mode Setter: Subscribing to events ...")
@@ -99,6 +101,26 @@ def initialize(isInstall){
     state.isPush = settings.sendPushMessage ? true : false
     log.debug("Mode Setter: sendPushMessage set to " + state.isPush)
 
+    /*
+    def sunInfo = getSunriseAndSunset()
+    Date now = new Date()
+    log.debug("Mode Setter: Sunrise is " + sunInfo.sunrise)
+    log.debug("Mode Setter: Sunset is " + sunInfo.sunset)
+    log.debug("Mode Setter: Now is " + now )
+    if (now >= sunInfo.sunrise){
+      log.debug("Mode Setter: " + now + " is greater than sunrise: " + sunInfo.sunrise)
+    }
+    else{
+      log.debug("Mode Setter: " + now + " is less than sunrise: " + sunInfo.sunrise)    
+    }
+	if (now >= sunInfo.sunset){
+      log.debug("Mode Setter: " + now + " is greater than sunset: " + sunInfo.sunset)
+    }
+    else{
+      log.debug("Mode Setter: " + now + " is less than sunset: " + sunInfo.sunset)    
+    }
+    */
+    
     // on install (not update), figure out what mode we should be in
     // IF someone's home. This value is needed so that when a presence
     // sensor is triggered, we know what mode to set the system to, as
@@ -115,6 +137,8 @@ def initialize(isInstall){
         state.modeIfHome = settings.newHomeDayMode
         state.modeIfAway = settings.newAwayDayMode
 
+		// [sunrise: Date, sunset: Date] TODO
+        
         state.eventDevice = ""  // last event device
 
         // device that triggered timer. This is not necessarily the
