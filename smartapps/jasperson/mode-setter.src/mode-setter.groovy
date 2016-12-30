@@ -15,8 +15,6 @@
  *  Initially based on: https://github.com/imbrianj/nobody_home/blob/master/nobody_home.groovy
  */
 
-// JR TODO: check mode settings
-
 definition(
     name:			"Mode Setter",
     namespace:		"jasperson",
