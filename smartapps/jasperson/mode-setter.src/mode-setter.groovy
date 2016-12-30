@@ -15,6 +15,8 @@
  *  Initially based on: https://github.com/imbrianj/nobody_home/blob/master/nobody_home.groovy
  */
 
+// JR TODO: check mode settings
+
 definition(
     name:			"Mode Setter",
     namespace:		"jasperson",
@@ -32,10 +34,10 @@ preferences{
         input "people", "capability.presenceSensor", multiple: true
     }
     section("Mode Settings"){
-		input "newAwayDayMode",		"mode",		title: "Everyone is away during the day"
-        input "newAwayNightMode",	"mode",		title: "Everyone is away at night"
-        input "newHomeDayMode", 	"mode",		title: "Someone is home during the day"
-        input "newHomeNightMode",	"mode",		title: "Someone is home at night"
+		input "awayDayMode",		"mode",		title: "Everyone is away during the day"
+        input "awayNightMode",		"mode",		title: "Everyone is away at night"
+        input "presentDayMode", 	"mode",		title: "Someone is present during the day"
+        input "presentNightMode",	"mode",		title: "Someone is present at night"
         input "ignoreMode",			"mode",		title: "Ignore state changes if in this mode"
     }
     section("Mode Change Delay (minutes)"){
@@ -89,35 +91,34 @@ def initialize(isInstall){
     // Determine time (with respect to sunrise/sunset) and initialize mode state
 	Date now = new Date()   
     def sunInfo = getSunriseAndSunset()
-    send("Sunrise, Sunset: ${sunInfo.sunrise}, ${sunInfo.sunset}", "debug")
+    send("Sunrise defined as: ${sunInfo.sunrise}", "debug")
+    send("Sunset defined as: ${sunInfo.sunset}", "debug")
 
-	if (now >= sunInfo.sunrise && now < sunInfo.sunset){
-    	state.modeIfHome = settings.newHomeDayMode
-        state.modeIfAway = settings.newAwayDayMode
+	if (now >= sunInfo.sunrise && now < sunInfo.sunset){	// Day modes
+    	state.modeIfPresent = settings.presentDayMode
+        state.modeIfAway = settings.awayDayMode
         send("Setting day modes", "debug")
     }
-    else {
-        state.modeIfHome = settings.newHomeNightMode
-        state.modeIfAway = settings.newAwayNightMode
+    else {													// Night modes
+        state.modeIfPresent	= settings.presentNightMode
+        state.modeIfAway	= settings.awayNightMode
         send("Setting night modes", "debug")
     }
-    // JR Test
-    // def whoIsHome = whoIsHome() //JR FIXME: Working here, not working in handleArrival?
-    send("Present devices: ${whoIsHome}", "debug")
-    // 4:42:59 PM: info Mode Setter: Kristen's Phone arrived at Home
-    handleArrival()
-    // 4:42:59 PM: info Mode Setter: null is already home, no actions needed
-	// End JR Test
-
-    changeMode()
-
-	// JR TODO: Log Level?
+    def present = getPresent()
+    if (present.string){
+    	send("${present.string} present", "debug")
+    }
+    else{
+        send("No devices are present", "debug")
+    }
+	// JR TODO: log level?
 	// JR TODO: SMS?
+
+    // Now change the mode
+    changeMode()
 
 // Executes during installed() invocations
     if (isInstall){
-    	// JR TODO: Cut/Paste mode state section from above (or leave in mainstream initialize?)
-
         state.eventDevice = ""		// Device that generated the last event
         state.timerDevice = null	// Device that triggered timer (not necessarily eventDevice)
 
@@ -137,25 +138,26 @@ def setInitialMode(){
 
 // Invoked at sunrise via subscription
 def sunriseHandler(evt){
-    state.modeIfHome = settings.newHomeDayMode
-    state.modeIfAway = settings.newAwayDayMode
+    state.modeIfPresent	= settings.presentDayMode
+    state.modeIfAway	= settings.awayDayMode
     changeMode()
 }
 
 // Invoked at sunset via subscription
 def sunsetHandler(evt){
-    state.modeIfHome = settings.newHomeNightMode
-    state.modeIfAway = settings.newAwayNightMode
+    state.modeIfPresent	= settings.presentNightMode
+    state.modeIfAway	= settings.awayNightMode
     changeMode()
 }
 
 // Invoked by setInitialMode (initialize() on install) and {sunrise, sunset}Handler
 def changeMode(){
-    if (isEveryoneAway()){
-    	setMode(state.modeIfAway, " because no one is home")
+	def present = getPresent()
+	if (! present.count){
+    	setMode(state.modeIfAway, " because no one is present")
     }
     else {
-    	setMode(state.modeIfHome, " because someone is home")
+    	setMode(state.modeIfPresent, " because ${present.string} is present")
     }
 }
 
@@ -182,8 +184,9 @@ def presenceHandler(evt){
 def handleDeparture(){
     send("${state.eventDevice} left ${location.name}", "info")
 
-    if (!isEveryoneAway()){
-        send("Someone is still home, no actions needed", "info")		// JR FIXME: enrich with whoIsHome
+	def present = getPresent()
+	if (present.count){
+        send("${present.string} present, no action required", "info")
         return
     }
 
@@ -208,20 +211,17 @@ def handleDeparture(){
 def handleArrival(){
     send("${state.eventDevice} arrived at ${location.name}", "info")
 
-    def numHome = isAnyoneHome()
-    if (!numHome){
-        // No one home, do nothing for now (should NOT happen)
-        send("${deviceName} arrived, but isAnyoneHome() returned false!", "warn")
+    def present = getPresent()
+    if (! present.count){
+        // No one present, do nothing for now (should NOT happen)
+        send("${state.eventDevice} arrived, but getPresent() returned false on count!", "warn")
         return
     }
 
-    if (numHome > 1){
-		// Not the first one home, do nothing, as any action that
-        // should happen would've happened when the first sensor
-        // arrived. this is the opposite of isEveryoneAway() where we
-        // don't do anything if someone's still home.
-        def whoIsHome = whoIsHome() 													// JR FIXME Not Working, error handling (e.g. empty string)
-        send("${whoIsHome}: already home, no actions needed", "info")				// JR DEBUG:  null is already home, no actions needed
+    if (present.count > 1){
+		// Not the first one present, do nothing, as any action that should happen
+        // would have already been triggered
+        send("${present.string} present, no action required", "info")
         return
     }
 
@@ -235,7 +235,7 @@ def handleArrival(){
     }
 
     // Schedule arrival timer
-    send("Scheduling ${state.modeIfHome} mode in ${state.arrivalDelay} second(s)", "info")
+    send("Scheduling ${state.modeIfPresent} mode in ${state.arrivalDelay} second(s)", "info")
     state.pendingOp = "arrive"
     state.timerDevice = state.eventDevice
     
@@ -256,7 +256,7 @@ def setMode(newMode, reason=""){
         send("${location.name} changed mode from ${location.mode} to ${newMode} ${reason}", "info")
     } 
     else {
-        send("${location.name} is already in ${newMode} mode, no actions needed", "info")
+        send("${location.name} is already in ${newMode} mode, no action required", "info")
     }
 }
 
@@ -305,9 +305,10 @@ def reasonStr(isAway, delaySec, delayMin){
 def delaySetMode(){
     def newMode = null
     def reason = ""
-
+    def present = getPresent()
+    
     // Timer has elapsed, check presence status to determine action
-    if (isEveryoneAway()){
+    if (! present.count){
         reason = reasonStr(true, state.awayDelay, awayThreshold)
         newMode = state.modeIfAway
         if (state.pendingOp){
@@ -316,9 +317,9 @@ def delaySetMode(){
     } 
     else {
         reason = reasonStr(false, state.arrivalDelay, arrivalThreshold)
-        newMode = state.modeIfHome
+        newMode = state.modeIfPresent
         if (state.pendingOp){
-            send("${state.pendingOp} timer elapsed: someone is home", "info")
+            send("${state.pendingOp} timer elapsed: someone is present", "info")
         }
     }
 
@@ -328,50 +329,40 @@ def delaySetMode(){
     state.timerDevice = null
 }
 
-// Returns boolean
-private isEveryoneAway(){
-    def result = true
-
-    if (people.findAll { it?.currentPresence == "present" }){
-        result = false
-    }
-    return result
-}
-
-// Returns number of people that are home
-// JR FIXME: Only invoked in handleArrival, either reintegrate or collapse with whoIsHome
-private isAnyoneHome(){
-    def result = 0
-    for (person in people){
+// Returns Map of the count and a string with a natural language list of present devices
+private getPresent(){
+	def present = [count:0, string:""]
+    List presentList = []
+    for (person in people.findAll { it?.currentPresence == "present" }){
         if (person.currentPresence == "present"){
-            result++
+        	present.count = present.count + 1 // JR: WTF, increment doesn't work on map value?
+            presentList.add(person.displayName)
         }
     }
-    return result
-}
 
-// Returns list of name(s) of people that are home
-private whoIsHome(){
-	def whoIsHomeStr = ""
-    def whoIsHomeList = []
-    // send("whoIsHome: people: " + people)
-    // groovy.lang.MissingMethodException: No signature of method: script14830557982301334026218.send() 
-    // is applicable for argument types: (org.codehaus.groovy.runtime.GStringImpl) values: [whoIsHome: people: [J.R.'s Phone, Kristen's Phone]]
-	// Possible solutions: find(), find(groovy.lang.Closure), run(), any(), card(groovy.lang.Closure), render(java.util.Map) @ line 356
-    for (person in people){ // JR TODO: findall()? - http://docs.groovy-lang.org/latest/html/groovy-jdk/java/util/List.html#findAll(groovy.lang.Closure)
-        if (person.currentPresence == "present"){
-            whoIsHomeList.add(person.displayName)
+    // Build natural language string from list
+    while (presentList){
+    	if (! present.string){			// First iteration
+        	present.string = presentList.pop() 
+        }
+        else if (presentList.size() == 1){	// Final iteration
+        	present.string = "${present.string} and ${presentList.pop()}"
+        }
+        else{								// Middle iteration(s)
+        	present.string = "${present.string}, ${presentList.pop()}"
         }
     }
-    whoIsHomeStr = whoIsHomeList.join(", ")
-    return whoIsHomeStr
+
+    return present
 }
 
+// Sends events, messages and logs per app configuration
 private send(msg, logLevel){
 	// log levels: [trace, debug, info, warn, error, fatal]
     if (logLevel != "debug"){
     	if (state.isPush){
         	sendPush("${app.label}: ${msg}")	// sendPush() sends the specified message as a push notification to users mobile devices and displays it in Hello, Home
+            // JR TODO: Add log level?
     	} // JR TODO: Add SMS else if
     	else {
     		sendNotificationEvent(msg)			// sendNotificationEvent() displays a message in Hello, Home, but does not send a push notification or SMS message.
