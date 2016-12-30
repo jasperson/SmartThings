@@ -101,8 +101,13 @@ def initialize(isInstall){
         state.modeIfAway = settings.newAwayNightMode
         send("Setting night modes", "debug")
     }
-    def whoIsHome = whoIsHome() //JR FIXME: Working here, not working in handleArrival?
+    // JR Test
+    // def whoIsHome = whoIsHome() //JR FIXME: Working here, not working in handleArrival?
     send("Present devices: ${whoIsHome}", "debug")
+    // 4:42:59 PM: info Mode Setter: Kristen's Phone arrived at Home
+    handleArrival()
+    // 4:42:59 PM: info Mode Setter: null is already home, no actions needed
+	// End JR Test
 
     changeMode()
 
@@ -178,7 +183,7 @@ def handleDeparture(){
     send("${state.eventDevice} left ${location.name}", "info")
 
     if (!isEveryoneAway()){
-        send("Someone is still home, no actions needed", "info")
+        send("Someone is still home, no actions needed", "info")		// JR FIXME: enrich with whoIsHome
         return
     }
 
@@ -204,7 +209,6 @@ def handleArrival(){
     send("${state.eventDevice} arrived at ${location.name}", "info")
 
     def numHome = isAnyoneHome()
-    def whoIsHome = whoIsHome() //JR FIXME Not Working?
     if (!numHome){
         // No one home, do nothing for now (should NOT happen)
         send("${deviceName} arrived, but isAnyoneHome() returned false!", "warn")
@@ -216,7 +220,8 @@ def handleArrival(){
         // should happen would've happened when the first sensor
         // arrived. this is the opposite of isEveryoneAway() where we
         // don't do anything if someone's still home.
-        send("${whoisHome} is already home, no actions needed", "info")				// JR DEBUG:  null is already home, no actions needed
+        def whoIsHome = whoIsHome() 													// JR FIXME Not Working, error handling (e.g. empty string)
+        send("${whoIsHome}: already home, no actions needed", "info")				// JR DEBUG:  null is already home, no actions needed
         return
     }
 
@@ -334,6 +339,7 @@ private isEveryoneAway(){
 }
 
 // Returns number of people that are home
+// JR FIXME: Only invoked in handleArrival, either reintegrate or collapse with whoIsHome
 private isAnyoneHome(){
     def result = 0
     for (person in people){
@@ -348,6 +354,10 @@ private isAnyoneHome(){
 private whoIsHome(){
 	def whoIsHomeStr = ""
     def whoIsHomeList = []
+    // send("whoIsHome: people: " + people)
+    // groovy.lang.MissingMethodException: No signature of method: script14830557982301334026218.send() 
+    // is applicable for argument types: (org.codehaus.groovy.runtime.GStringImpl) values: [whoIsHome: people: [J.R.'s Phone, Kristen's Phone]]
+	// Possible solutions: find(), find(groovy.lang.Closure), run(), any(), card(groovy.lang.Closure), render(java.util.Map) @ line 356
     for (person in people){ // JR TODO: findall()? - http://docs.groovy-lang.org/latest/html/groovy-jdk/java/util/List.html#findAll(groovy.lang.Closure)
         if (person.currentPresence == "present"){
             whoIsHomeList.add(person.displayName)
