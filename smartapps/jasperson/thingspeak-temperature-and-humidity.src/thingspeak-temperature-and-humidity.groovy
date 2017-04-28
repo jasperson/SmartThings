@@ -52,11 +52,11 @@ def updated() {
 
 // Invoked by installed() and updated()
 def initialize() {
-    subscribe(temperature, "temperature", handleTemperatureEvent)
-    subscribe(humidity, "humidity", handleHumidityEvent)
+    subscribe(temperature, "Temperature", handleTemperatureEvent)
+    subscribe(humidity, "Humidity", handleHumidityEvent)
 
     updateChannelInfo()
-    log.debug("${app.label}: FieldMap: ${state.fieldMap}") 
+    log.debug("${app.label}: State: ${state}") 
 }
 
 def handleTemperatureEvent(evt) {
@@ -79,6 +79,7 @@ private updateChannelInfo() {
     log.debug("${app.label}: Retrieving channel info for ${channelId}")
 
     def url = "https://api.thingspeak.com/channels/${channelId}/feeds.json?key=${channelKey}&results=0"
+    log.debug("${app.label}: updateChannelInfo URL: ${url}")
     httpGet(url) {
         response ->
         if (response.status != 200 ) {
@@ -89,6 +90,7 @@ private updateChannelInfo() {
         }
     }
     state.fieldMap = getFieldMap(state.channelInfo)
+    log.debug("${app.label}: FieldMap: ${state.fieldMap}")
 }
 
 // Invoked by handler(s)
