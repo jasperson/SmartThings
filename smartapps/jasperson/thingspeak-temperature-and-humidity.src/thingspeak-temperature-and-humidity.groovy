@@ -18,7 +18,6 @@ definition(
     namespace: "jasperson",
     author: "J.R. Jasperson",
     description: "ThingSpeak integration to track and visualize temperature and humidity",
-    category: "Climate Control",
     iconUrl: "http://cdn.device-icons.smartthings.com/Weather/weather2-icn.png",
     iconX2Url: "http://cdn.device-icons.smartthings.com/Weather/weather2-icn@2x.png",
     iconX3Url: "http://cdn.device-icons.smartthings.com/Weather/weather2-icn@3x.png")
@@ -57,7 +56,7 @@ def initialize() {
     subscribe(humidity, "humidity", handleHumidityEvent)
 
     updateChannelInfo()
-    log.debug("${app.label}: ${state.fieldMap}") 
+    log.debug("${app.label}: FieldMap: ${state.fieldMap}") 
 }
 
 def handleTemperatureEvent(evt) {
@@ -86,7 +85,7 @@ private updateChannelInfo() {
             log.debug("${app.label}: ThingSpeak data retrieval failed, status = ${response.status}")
         } else {
             state.channelInfo = response.data?.channel
-            log.debug("${app.label}: ${state.channelInfo}")
+            log.debug("${app.label}: Channel Info: ${state.channelInfo}")
         }
     }
     state.fieldMap = getFieldMap(state.channelInfo)
@@ -102,7 +101,7 @@ private logField(evt, Closure c) {
     }
 
     def value = c(evt.value)
-    log.debug("${app.label}: Logging to channel ${channelId}, ${fieldNum}, value ${value}")
+    log.debug("${app.label}: Logging to channel ${channelId}, ${fieldNum}, ${value}")
  
     //JR TODO - check URI
     def url = "https://api.thingspeak.com/update?key=${channelKey}&${fieldNum}=${value}"
