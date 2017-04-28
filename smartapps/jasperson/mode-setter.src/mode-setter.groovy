@@ -103,6 +103,7 @@ def initialize(isInstall){
         send("Setting night modes", "debug")
     }
     def present = getPresent()
+    // JR TODO: Pull next block into getPresent?
     if (present.string){
     	send("${present.string} present", "debug")
     }
