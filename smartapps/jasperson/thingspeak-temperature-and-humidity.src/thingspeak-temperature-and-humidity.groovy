@@ -18,10 +18,11 @@ definition(
     namespace: "jasperson",
     author: "J.R. Jasperson",
     description: "ThingSpeak integration to track and visualize temperature and humidity",
-    category: "Climate Control",
+    category: "Health & Wellness",
     iconUrl: "http://cdn.device-icons.smartthings.com/Weather/weather2-icn.png",
     iconX2Url: "http://cdn.device-icons.smartthings.com/Weather/weather2-icn@2x.png",
     iconX3Url: "http://cdn.device-icons.smartthings.com/Weather/weather2-icn@3x.png")
+
 
 // Presented to user on app installation/update for configuration
 preferences {
@@ -31,11 +32,11 @@ preferences {
     }
 
     section ("ThingSpeak Channel ID") {
-        input "channelID", "number", title: "Channel ID"
+        input "channelId", "number", title: "Channel id"
     }
 
     section ("ThingSpeak Write Key") {
-        input "channelKey", "text", title: "Channel Key"
+        input "channelKey", "text", title: "Channel key"
     }
 }
 
@@ -76,9 +77,9 @@ private getFieldMap(channelInfo) {
 
 // Invoked by initialize()
 private updateChannelInfo() {
-    log.debug("${app.label}: Retrieving channel info for ${channelID}")
+    log.debug("${app.label}: Retrieving channel info for ${channelId}")
 
-    def url = "https://api.thingspeak.com/channels/${channelID}/feeds.json?key=${channelKey}&results=0"
+    def url = "https://api.thingspeak.com/channels/${channelId}/feeds.json?key=${channelKey}&results=0"
     httpGet(url) {
         response ->
         if (response.status != 200 ) {
@@ -89,7 +90,6 @@ private updateChannelInfo() {
         }
     }
     state.fieldMap = getFieldMap(state.channelInfo)
-    log.debug("${app.label}: ${state.fieldMap}")
 }
 
 // Invoked by handler(s)
@@ -102,13 +102,14 @@ private logField(evt, Closure c) {
     }
 
     def value = c(evt.value)
-    log.debug("${app.label}: Logging to channel ${channelID}, ${fieldNum}, value ${value}")
+    log.debug("${app.label}: Logging to channel ${channelId}, ${fieldNum}, value ${value}")
  
     //JR TODO - check URI
     def url = "https://api.thingspeak.com/update?key=${channelKey}&${fieldNum}=${value}"
     httpGet(url) { 
         response -> 
         if (response.status != 200 ) {
+            log.debug "ThingSpeak logging failed, status = ${response.status}"
             log.debug("${app.label}: ThingSpeak logging failed, status = ${response.status}")
         }
     }
