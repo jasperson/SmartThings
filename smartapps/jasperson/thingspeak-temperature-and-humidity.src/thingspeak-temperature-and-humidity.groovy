@@ -56,7 +56,7 @@ def initialize() {
     subscribe(humidityDevs, "humidity", handleHumidityEvent)
 
     updateChannelInfo()
-    log.debug("${app.label}: State: ${state}") 
+    send("State: ${state}") 
 }
 
 def handleTemperatureEvent(evt) {
@@ -76,21 +76,21 @@ private getFieldMap(channelInfo) {
 
 // Invoked by initialize()
 private updateChannelInfo() {
-    log.debug("${app.label}: Retrieving channel info for ${channelID}")
+    send("Retrieving channel info for ${channelID}")
 
     def url = "https://api.thingspeak.com/channels/${channelID}/feeds.json?key=${channelKey}&results=0"
-    log.debug("${app.label}: updateChannelInfo URL: ${url}")
+    send("updateChannelInfo URL: ${url}")
     httpGet(url) {
         response ->
         if (response.status != 200 ) {
-            log.debug("${app.label}: ThingSpeak data retrieval failed, status = ${response.status}")
+            send("ThingSpeak data retrieval failed, status = ${response.status}")
         } else {
             state.channelInfo = response.data?.channel
-            log.debug("${app.label}: Channel Info: ${state.channelInfo}")
+            send("Channel Info: ${state.channelInfo}")
         }
     }
     state.fieldMap = getFieldMap(state.channelInfo)
-    log.debug("${app.label}: FieldMap: ${state.fieldMap}")
+    send("FieldMap: ${state.fieldMap}")
 }
 
 // Invoked by handler(s)
@@ -98,19 +98,24 @@ private logField(evt, Closure c) {
     def deviceName = evt.displayName.trim()
     def fieldNum = state.fieldMap[deviceName]
     if (!fieldNum) {
-        log.debug("${app.label}: Device '${deviceName}' has no field")
+        send("Device '${deviceName}' has no field")
         return
     }
 
     def value = c(evt.value)
-    log.debug("${app.label}: Logging to channel ${channelID}, ${fieldNum}, ${value}")
+    send("Logging to channel ${channelID}, ${fieldNum}, ${value}")
  
     def url = "https://api.thingspeak.com/update?api_key=${channelKey}&${fieldNum}=${value}"
-    log.debug("${app.label}: logField URL: ${url}")
+    send("logField URL: ${url}")
     httpGet(url) { 
         response -> 
         if (response.status != 200 ) {
-            log.debug("${app.label}: ThingSpeak logging failed, status = ${response.status}")
+            send("ThingSpeak logging failed, status = ${response.status}")
         }
     }
+}
+private send(msg){
+	// log levels: [trace, debug, info, warn, error, fatal]
+	sendNotificationEvent(msg)			// sendNotificationEvent() displays a message in Hello, Home, but does not send a push notification or SMS message.
+    log.debug("${app.label}: ${msg}")
 }
