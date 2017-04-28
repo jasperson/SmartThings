@@ -52,8 +52,7 @@ def updated() {
 
 // Invoked by installed() and updated()
 def initialize() {
-	//schedule("0 0 0/3 1/1 * ? *", handleSchedule) // Every 3 hours
-    schedule("0 0/5 * 1/1 * ? *", handleSchedule)
+	schedule("0 0 0/3 1/1 * ? *", handleSchedule) // Every 3 hours
     updateChannelInfo()
 }
 
