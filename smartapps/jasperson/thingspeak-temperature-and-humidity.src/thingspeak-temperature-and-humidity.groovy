@@ -62,25 +62,16 @@ def initialize() {
 
 def handleSchedule(){
 	send("handleSchedule...")
-    def currentTemp = tempDev.currentState("temperature")
-    def currentRH = RHDev.currentState("humidity")
-    send("handleSchedule: t: ${tempDev}")
-    send("handleSchedule: rh: ${RHDev}")
-    send("handleSchedule: currentTemp: ${currentTemp}")
-    send("handleSchedule: currentRH: ${currentRH}")
-    
-    def url = "https://api.thingspeak.com/update?api_key=${channelKey}&${state.fieldMap['temperature']}=${currentTemp}"
-    send("HST URL: ${url}")
-    send("HSRH URL: https://api.thingspeak.com/update?api_key=${channelKey}&${state.fieldMap['humidity']}=${currentRH}")
-    send("HSC URL: https://api.thingspeak.com/update?api_key=${channelKey}&${state.fieldMap['temperature']}=${currentTemp}&${state.fieldMap['humidity']}=${currentRH}")
-    /*
+    def currentTemp = tempDev.currentValue("temperature")
+    def currentRH = RHDev.currentValue("humidity")
+    def url = "https://api.thingspeak.com/update?api_key=${channelKey}&${state.fieldMap['temperature']}=${currentTemp}&${state.fieldMap['humidity']}=${currentRH}"
     httpGet(url) { 
         response -> 
         if (response.status != 200 ) {
             send("ThingSpeak logging failed, status = ${response.status}")
         }
+        send("HS: Response: ${response}")
     }
-    */
 }
 
 def handleTemperatureEvent(evt) {
