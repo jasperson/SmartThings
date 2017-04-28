@@ -107,7 +107,8 @@ private getFieldMap(channelInfo) {
 private updateChannelInfo() {
     log.debug "Retrieving channel info for ${channelId}"
 
-    def url = "http://api.thingspeak.com/channels/${channelId}/feed.json?key=${channelKey}&results=0"
+    //def url = "http://api.thingspeak.com/channels/${channelId}/feed.json?key=${channelKey}&results=0"
+    def url = "http://api.thingspeak.com/channels/${channelId}/feeds.json?key=${channelKey}&results=0"
     httpGet(url) {
         response ->
         if (response.status != 200 ) {
