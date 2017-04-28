@@ -79,7 +79,6 @@ private updateChannelInfo() {
     send("Retrieving channel info for ${channelID}")
 
     def url = "https://api.thingspeak.com/channels/${channelID}/feeds.json?key=${channelKey}&results=0"
-    send("updateChannelInfo URL: ${url}")
     httpGet(url) {
         response ->
         if (response.status != 200 ) {
@@ -90,7 +89,6 @@ private updateChannelInfo() {
         }
     }
     state.fieldMap = getFieldMap(state.channelInfo)
-    send("FieldMap: ${state.fieldMap}")
 }
 
 // Invoked by handler(s)
