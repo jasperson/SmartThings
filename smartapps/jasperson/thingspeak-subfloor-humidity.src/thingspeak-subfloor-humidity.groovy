@@ -24,39 +24,49 @@ definition(
     iconX3Url: "https://s3.amazonaws.com/smartapp-icons/Convenience/Cat-Convenience@2x.png")
 
 
+// Presented to user on app installation/update for configuration
 preferences {
-    section("Log devices...") {
-        input "temperatures", "capability.temperatureMeasurement", title: "Temperatures", required:false, multiple: true
+    section("Devices") {
+        input "temperature", "capability.temperatureMeasurement", title: "Temperature", required:false, multiple: true
+        input "humdity", "capability.relativeHumidityMeasurement", title: "Humidity", required:false, multiple: true
+        /*
         input "contacts", "capability.contactSensor", title: "Contacts", required: false, multiple: true
         input "accelerations", "capability.accelerationSensor", title: "Accelerations", required: false, multiple: true
         input "motions", "capability.motionSensor", title: "Motions", required: false, multiple: true
         input "switches", "capability.switch", title: "Switches", required: false, multiple: true
+        */
     }
 
-    section ("ThinkSpeak channel id...") {
+    section ("ThinkSpeak Channel ID") {
         input "channelId", "number", title: "Channel id"
     }
 
-    section ("ThinkSpeak write key...") {
+    section ("ThinkSpeak Write Key") {
         input "channelKey", "text", title: "Channel key"
     }
 }
 
+// Invoked on app install
 def installed() {
     initialize()
 }
 
+// Invoked on app update/save
 def updated() {
     unsubscribe()
     initialize()
 }
 
+// Invoked by installed() and updated()
 def initialize() {
-    subscribe(temperatures, "temperature", handleTemperatureEvent)
+    subscribe(temperature, "temperature", handleTemperatureEvent)
+    subscribe(humidity, "humidity", handleHumidityEvent)
+    /*
     subscribe(contacts, "contact", handleContactEvent)
     subscribe(accelerations, "acceleration", handleAccelerationEvent)
     subscribe(motions, "motion", handleMotionEvent)
     subscribe(switches, "switch", handleSwitchEvent)
+    */
 
     updateChannelInfo()
     log.debug state.fieldMap
@@ -66,6 +76,11 @@ def handleTemperatureEvent(evt) {
     logField(evt) { it.toString() }
 }
 
+def handleHumidityEvent(evt) {
+    logField(evt) { it.toString() }
+}
+
+/*
 def handleContactEvent(evt) {
     logField(evt) { it == "open" ? "1" : "0" }
 }
@@ -81,6 +96,7 @@ def handleMotionEvent(evt) {
 def handleSwitchEvent(evt) {
     logField(evt) { it == "on" ? "1" : "0" }
 }
+*/
 
 private getFieldMap(channelInfo) {
     def fieldMap = [:]
