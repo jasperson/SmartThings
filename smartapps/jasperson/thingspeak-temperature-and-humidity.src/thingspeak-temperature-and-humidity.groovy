@@ -26,8 +26,8 @@ definition(
 // Presented to user on app installation/update for configuration
 preferences {
     section("Devices") {
-        input "temperature", "capability.temperatureMeasurement", title: "Temperature", required:false, multiple: true
-        input "humdity", "capability.relativeHumidityMeasurement", title: "Humidity", required:false, multiple: true
+        input "temperatureDevs", "capability.temperatureMeasurement", title: "Temperature", required:false, multiple: true
+        input "humdityDevs", "capability.relativeHumidityMeasurement", title: "Humidity", required:false, multiple: true
     }
 
     section ("ThingSpeak Channel ID") {
@@ -52,8 +52,8 @@ def updated() {
 
 // Invoked by installed() and updated()
 def initialize() {
-    subscribe(temperature, "Temperature", handleTemperatureEvent)
-    subscribe(humidity, "Humidity", handleHumidityEvent)
+    subscribe(temperatureDevs, "temperature", handleTemperatureEvent)
+    subscribe(humidityDevs, "humidity", handleHumidityEvent)
 
     updateChannelInfo()
     log.debug("${app.label}: State: ${state}") 
