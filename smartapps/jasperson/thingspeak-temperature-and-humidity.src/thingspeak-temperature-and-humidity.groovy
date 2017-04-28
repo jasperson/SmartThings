@@ -26,8 +26,8 @@ definition(
 // Presented to user on app installation/update for configuration
 preferences {
     section("Devices") {
-        input "temperatureDev", "capability.temperatureMeasurement", title: "Temperature", required:false, multiple: false
-        input "humidityDev", "capability.relativeHumidityMeasurement", title: "Humidity", required:false, multiple: false
+        input "tempDev", "capability.temperatureMeasurement", title: "Temperature", required:false, multiple: false
+        input "RHDev", "capability.relativeHumidityMeasurement", title: "Humidity", required:false, multiple: false
     }
 
     section ("ThingSpeak Channel ID") {
@@ -53,8 +53,8 @@ def updated() {
 // Invoked by installed() and updated()
 def initialize() {
 	schedule("0 0/5 * 1/1 * ? *", handleSchedule)
-	subscribe(temperatureDev, "temperature", handleTemperatureEvent)
-    subscribe(humidityDev, "humidity", handleHumidityEvent)
+	subscribe(tempDev, "temperature", handleTemperatureEvent)
+    subscribe(RHDev, "humidity", handleHumidityEvent)
 
     updateChannelInfo()
     send("State: ${state}") 
@@ -62,10 +62,25 @@ def initialize() {
 
 def handleSchedule(){
 	send("handleSchedule...")
-    def currentTemp = temperatureDev.currentState("temperature")
-    def currentRH = humidityDev.currentState("humidity")
+    def currentTemp = tempDev.currentState("temperature")
+    def currentRH = RHDev.currentState("humidity")
+    send("handleSchedule: t: ${tempDev}")
+    send("handleSchedule: rh: ${RHDev}")
     send("handleSchedule: currentTemp: ${currentTemp}")
     send("handleSchedule: currentRH: ${currentRH}")
+    
+    def url = "https://api.thingspeak.com/update?api_key=${channelKey}&${state.fieldMap['temperature']}=${currentTemp}"
+    send("HST URL: ${url}")
+    send("HSRH URL: https://api.thingspeak.com/update?api_key=${channelKey}&${state.fieldMap['humidity']}=${currentRH}")
+    send("HSC URL: https://api.thingspeak.com/update?api_key=${channelKey}&${state.fieldMap['temperature']}=${currentTemp}&${state.fieldMap['humidity']}=${currentRH}")
+    /*
+    httpGet(url) { 
+        response -> 
+        if (response.status != 200 ) {
+            send("ThingSpeak logging failed, status = ${response.status}")
+        }
+    }
+    */
 }
 
 def handleTemperatureEvent(evt) {
