@@ -26,8 +26,8 @@ definition(
 // Presented to user on app installation/update for configuration
 preferences {
     section("Devices") {
-        input "tempDev", "capability.temperatureMeasurement", title: "Temperature", required:false, multiple: false
-        input "RHDev", "capability.relativeHumidityMeasurement", title: "Humidity", required:false, multiple: false
+        input "tempDev", "capability.temperatureMeasurement", title: "Temperature", required:true, multiple: false
+        input "RHDev", "capability.relativeHumidityMeasurement", title: "Humidity", required:true, multiple: false
     }
 
     section ("ThingSpeak Channel ID") {
@@ -52,34 +52,25 @@ def updated() {
 
 // Invoked by installed() and updated()
 def initialize() {
-	schedule("0 0/5 * 1/1 * ? *", handleSchedule)
-	subscribe(tempDev, "temperature", handleTemperatureEvent)
-    subscribe(RHDev, "humidity", handleHumidityEvent)
-
+	//schedule("0 0 0/3 1/1 * ? *", handleSchedule) // Every 3 hours
+    schedule("0 0/5 * 1/1 * ? *", handleSchedule)
     updateChannelInfo()
-    send("State: ${state}") 
 }
 
+// Invoked via the schedule() set in initialize()
 def handleSchedule(){
-	send("handleSchedule...")
-    def currentTemp = tempDev.currentValue("temperature")
-    def currentRH = RHDev.currentValue("humidity")
-    def url = "https://api.thingspeak.com/update?api_key=${channelKey}&${state.fieldMap['temperature']}=${currentTemp}&${state.fieldMap['humidity']}=${currentRH}"
+    def tempCurrent = tempDev.currentValue("temperature")
+    def tempField = state.fieldMap["temperature"]
+    def RHCurrent = RHDev.currentValue("humidity")
+    def RHField = state.fieldMap["humidity"]
+    
+    def url = "https://api.thingspeak.com/update?api_key=${channelKey}&${tempField}=${tempCurrent}&${RHField}=${RHCurrent}"
     httpGet(url) { 
         response -> 
         if (response.status != 200 ) {
             send("ThingSpeak logging failed, status = ${response.status}")
         }
-        send("HS: Response: ${response}")
     }
-}
-
-def handleTemperatureEvent(evt) {
-    logField(evt) { it.toString() }
-}
-
-def handleHumidityEvent(evt) {
-    logField(evt) { it.toString() }
 }
 
 // Invoked by updateChannelInfo()
@@ -100,34 +91,11 @@ private updateChannelInfo() {
             send("ThingSpeak data retrieval failed, status = ${response.status}")
         } else {
             state.channelInfo = response.data?.channel
-            send("Channel Info: ${state.channelInfo}")
         }
     }
     state.fieldMap = getFieldMap(state.channelInfo)
 }
 
-// Invoked by handler(s)
-private logField(evt, Closure c) {
-	send("Event: ${evt}")
-    def deviceName = evt.displayName.trim()
-    def fieldNum = state.fieldMap[deviceName]
-    if (!fieldNum) {
-        send("Device '${deviceName}' has no field")
-        return
-    }
-
-    def value = c(evt.value)
-    send("Logging to channel ${channelID}, ${fieldNum}, ${value}")
- 
-    def url = "https://api.thingspeak.com/update?api_key=${channelKey}&${fieldNum}=${value}"
-    send("logField URL: ${url}")
-    httpGet(url) { 
-        response -> 
-        if (response.status != 200 ) {
-            send("ThingSpeak logging failed, status = ${response.status}")
-        }
-    }
-}
 private send(msg){
 	// log levels: [trace, debug, info, warn, error, fatal]
 	sendNotificationEvent(msg)			// sendNotificationEvent() displays a message in Hello, Home, but does not send a push notification or SMS message.
