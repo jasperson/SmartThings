@@ -31,11 +31,11 @@ preferences {
     }
 
     section ("ThingSpeak Channel ID") {
-        input "channelId", "number", title: "Channel id"
+        input "channelID", "number", title: "Channel ID"
     }
 
     section ("ThingSpeak Write Key") {
-        input "channelKey", "text", title: "Channel key"
+        input "channelKey", "text", title: "Channel Key"
     }
 }
 
@@ -76,9 +76,9 @@ private getFieldMap(channelInfo) {
 
 // Invoked by initialize()
 private updateChannelInfo() {
-    log.debug("${app.label}: Retrieving channel info for ${channelId}")
+    log.debug("${app.label}: Retrieving channel info for ${channelID}")
 
-    def url = "https://api.thingspeak.com/channels/${channelId}/feeds.json?key=${channelKey}&results=0"
+    def url = "https://api.thingspeak.com/channels/${channelID}/feeds.json?key=${channelKey}&results=0"
     log.debug("${app.label}: updateChannelInfo URL: ${url}")
     httpGet(url) {
         response ->
@@ -103,9 +103,10 @@ private logField(evt, Closure c) {
     }
 
     def value = c(evt.value)
-    log.debug("${app.label}: Logging to channel ${channelId}, ${fieldNum}, ${value}")
+    log.debug("${app.label}: Logging to channel ${channelID}, ${fieldNum}, ${value}")
  
     def url = "https://api.thingspeak.com/update?api_key=${channelKey}&${fieldNum}=${value}"
+    log.debug("${app.label}: logField URL: ${url}")
     httpGet(url) { 
         response -> 
         if (response.status != 200 ) {
