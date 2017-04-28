@@ -26,8 +26,8 @@ definition(
 // Presented to user on app installation/update for configuration
 preferences {
     section("Devices") {
-        input "temperatureDevs", "capability.temperatureMeasurement", title: "Temperature", required:false, multiple: true
-        input "humidityDevs", "capability.relativeHumidityMeasurement", title: "Humidity", required:false, multiple: true
+        input "temperatureDev", "capability.temperatureMeasurement", title: "Temperature", required:false, multiple: false
+        input "humidityDev", "capability.relativeHumidityMeasurement", title: "Humidity", required:false, multiple: false
     }
 
     section ("ThingSpeak Channel ID") {
@@ -52,11 +52,20 @@ def updated() {
 
 // Invoked by installed() and updated()
 def initialize() {
-    subscribe(temperatureDevs, "temperature", handleTemperatureEvent)
-    subscribe(humidityDevs, "humidity", handleHumidityEvent)
+	schedule("0 0/5 * 1/1 * ? *", handleSchedule)
+	subscribe(temperatureDev, "temperature", handleTemperatureEvent)
+    subscribe(humidityDev, "humidity", handleHumidityEvent)
 
     updateChannelInfo()
     send("State: ${state}") 
+}
+
+def handleSchedule(){
+	send("handleSchedule...")
+    def currentTemp = temperatureDev.currentState("temperature")
+    def currentRH = humidityDev.currentState("humidity")
+    send("handleSchedule: currentTemp: ${currentTemp}")
+    send("handleSchedule: currentRH: ${currentRH}")
 }
 
 def handleTemperatureEvent(evt) {
@@ -93,6 +102,7 @@ private updateChannelInfo() {
 
 // Invoked by handler(s)
 private logField(evt, Closure c) {
+	send("Event: ${evt}")
     def deviceName = evt.displayName.trim()
     def fieldNum = state.fieldMap[deviceName]
     if (!fieldNum) {
