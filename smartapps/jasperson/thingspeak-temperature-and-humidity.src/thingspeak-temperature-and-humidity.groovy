@@ -109,7 +109,6 @@ private logField(evt, Closure c) {
     httpGet(url) { 
         response -> 
         if (response.status != 200 ) {
-            log.debug "ThingSpeak logging failed, status = ${response.status}"
             log.debug("${app.label}: ThingSpeak logging failed, status = ${response.status}")
         }
     }
