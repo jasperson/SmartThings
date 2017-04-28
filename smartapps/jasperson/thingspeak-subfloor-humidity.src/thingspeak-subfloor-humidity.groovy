@@ -25,26 +25,101 @@ definition(
 
 
 preferences {
-	section("Title") {
-		// TODO: put inputs here
-	}
+    section("Log devices...") {
+        input "temperatures", "capability.temperatureMeasurement", title: "Temperatures", required:false, multiple: true
+        input "contacts", "capability.contactSensor", title: "Contacts", required: false, multiple: true
+        input "accelerations", "capability.accelerationSensor", title: "Accelerations", required: false, multiple: true
+        input "motions", "capability.motionSensor", title: "Motions", required: false, multiple: true
+        input "switches", "capability.switch", title: "Switches", required: false, multiple: true
+    }
+
+    section ("ThinkSpeak channel id...") {
+        input "channelId", "number", title: "Channel id"
+    }
+
+    section ("ThinkSpeak write key...") {
+        input "channelKey", "text", title: "Channel key"
+    }
 }
 
 def installed() {
-	log.debug "Installed with settings: ${settings}"
-
-	initialize()
+    initialize()
 }
 
 def updated() {
-	log.debug "Updated with settings: ${settings}"
-
-	unsubscribe()
-	initialize()
+    unsubscribe()
+    initialize()
 }
 
 def initialize() {
-	// TODO: subscribe to attributes, devices, locations, etc.
+    subscribe(temperatures, "temperature", handleTemperatureEvent)
+    subscribe(contacts, "contact", handleContactEvent)
+    subscribe(accelerations, "acceleration", handleAccelerationEvent)
+    subscribe(motions, "motion", handleMotionEvent)
+    subscribe(switches, "switch", handleSwitchEvent)
+
+    updateChannelInfo()
+    log.debug state.fieldMap
 }
 
-// TODO: implement event handlers
+def handleTemperatureEvent(evt) {
+    logField(evt) { it.toString() }
+}
+
+def handleContactEvent(evt) {
+    logField(evt) { it == "open" ? "1" : "0" }
+}
+
+def handleAccelerationEvent(evt) {
+    logField(evt) { it == "active" ? "1" : "0" }
+}
+
+def handleMotionEvent(evt) {
+    logField(evt) { it == "active" ? "1" : "0" }
+}
+
+def handleSwitchEvent(evt) {
+    logField(evt) { it == "on" ? "1" : "0" }
+}
+
+private getFieldMap(channelInfo) {
+    def fieldMap = [:]
+    channelInfo?.findAll { it.key?.startsWith("field") }.each { fieldMap[it.value?.trim()] = it.key }
+    return fieldMap
+}
+
+private updateChannelInfo() {
+    log.debug "Retrieving channel info for ${channelId}"
+
+    def url = "http://api.thingspeak.com/channels/${channelId}/feed.json?key=${channelKey}&results=0"
+    httpGet(url) {
+        response ->
+        if (response.status != 200 ) {
+            log.debug "ThingSpeak data retrieval failed, status = ${response.status}"
+        } else {
+            state.channelInfo = response.data?.channel
+        }
+    }
+
+    state.fieldMap = getFieldMap(state.channelInfo)
+}
+
+private logField(evt, Closure c) {
+    def deviceName = evt.displayName.trim()
+    def fieldNum = state.fieldMap[deviceName]
+    if (!fieldNum) {
+        log.debug "Device '${deviceName}' has no field"
+        return
+    }
+
+    def value = c(evt.value)
+    log.debug "Logging to channel ${channelId}, ${fieldNum}, value ${value}"
+
+    def url = "http://api.thingspeak.com/update?key=${channelKey}&${fieldNum}=${value}"
+    httpGet(url) { 
+        response -> 
+        if (response.status != 200 ) {
+            log.debug "ThingSpeak logging failed, status = ${response.status}"
+        }
+    }
+}
