@@ -104,6 +104,7 @@ private getFieldMap(channelInfo) {
     return fieldMap
 }
 
+// Invoked by initialize()
 private updateChannelInfo() {
     log.debug "Retrieving channel info for ${channelId}"
 
@@ -139,4 +140,19 @@ private logField(evt, Closure c) {
             log.debug "ThingSpeak logging failed, status = ${response.status}"
         }
     }
+}
+
+// Sends events, messages and logs per app configuration
+private send(msg, logLevel){
+	// log levels: [trace, debug, info, warn, error, fatal]
+    if (logLevel != "debug"){
+    	if (state.isPush){
+        	sendPush("${app.label}: ${msg}")	// sendPush() sends the specified message as a push notification to users mobile devices and displays it in Hello, Home
+            // JR TODO: Add log level?
+    	} // JR TODO: Add SMS else if
+    	else {
+    		sendNotificationEvent(msg)			// sendNotificationEvent() displays a message in Hello, Home, but does not send a push notification or SMS message.
+		}
+	}
+    log."$logLevel"("${app.label}: ${msg}")
 }
