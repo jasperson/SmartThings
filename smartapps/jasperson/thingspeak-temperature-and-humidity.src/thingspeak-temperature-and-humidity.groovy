@@ -18,7 +18,7 @@ definition(
     namespace: "jasperson",
     author: "J.R. Jasperson",
     description: "ThingSpeak integration to track and visualize temperature and humidity",
-    category: "Health & Wellness",
+    category: "Climate Control",
     iconUrl: "http://cdn.device-icons.smartthings.com/Weather/weather2-icn.png",
     iconX2Url: "http://cdn.device-icons.smartthings.com/Weather/weather2-icn@2x.png",
     iconX3Url: "http://cdn.device-icons.smartthings.com/Weather/weather2-icn@3x.png")
