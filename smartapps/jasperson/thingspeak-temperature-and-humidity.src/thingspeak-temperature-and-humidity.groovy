@@ -27,7 +27,7 @@ definition(
 preferences {
     section("Devices") {
         input "temperatureDevs", "capability.temperatureMeasurement", title: "Temperature", required:false, multiple: true
-        input "humdityDevs", "capability.relativeHumidityMeasurement", title: "Humidity", required:false, multiple: true
+        input "humidityDevs", "capability.relativeHumidityMeasurement", title: "Humidity", required:false, multiple: true
     }
 
     section ("ThingSpeak Channel ID") {
